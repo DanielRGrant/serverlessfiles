@@ -1,0 +1,213 @@
+Resources:
+  UploadQueryDataPipeline:
+    Type: AWS::DataPipeline::Pipeline
+    Properties: 
+      Activate: False
+      Description: 'Upload query data from S3 to Dynamodb'
+      Name: 'sls-upload-query-data-pipeline'
+      PipelineObjects:
+        -
+          Id: "TableLoadActivity"
+          Name: "TableLoadActivity"
+          Fields:
+            - 
+              Key: "output"
+              RefValue: "DDBDestinationTable"
+            -
+              Key: "input"
+              RefValue: "S3InputDataNode"
+            -
+              Key: "maximumRetries"
+              StringValue: "2"
+            -
+              Key: "name"
+              StringValue: "TableLoadActivity"
+            -
+              Key: "step"
+              StringValue: "s3://dynamodb-dpl-#{myDDBRegion}/emr-ddb-storage-handler/4.11.0/emr-dynamodb-tools-4.11.0-SNAPSHOT-jar-with-dependencies.jar,org.apache.hadoop.dynamodb.tools.DynamoDBImport,#{input.directoryPath},#{output.tableName},#{output.writeThroughputPercent}"
+            -
+              Key: "runsOn"
+              RefValue: "EmrClusterForLoad"
+            -
+              Key: "type"
+              StringValue: "EmrActivity"
+            -
+              Key: "resizeClusterBeforeRunning"
+              StringValue: "true"
+        - 
+          Id: "EmrClusterForLoad"
+          Name: "EmrClusterForLoad"
+          Fields:
+            -
+              Key: "name"
+              StringValue: "EmrClusterForLoad"
+            -
+              Key: "coreInstanceCount"
+              StringValue: "1"
+            -
+              Key: "coreInstanceType"
+              StringValue: "m3.xlarge"
+            -
+              Key: "releaseLabel"
+              StringValue: "emr-5.23.0"
+            -
+              Key: "masterInstanceType"
+              StringValue: "m3.xlarge"
+            -
+              Key: "region"
+              StringValue: "#{myDDBRegion}"
+            -
+              Key: "type"
+              StringValue: "EmrCluster"
+        -
+          Id: "DDBDestinationTable"
+          Name: "DDBDestinationTable"
+          Fields:
+            - 
+              Key: "writeThroughputPercent"
+              StringValue: "#{myDDBWriteThroughputRatio}"
+            -
+              Key: "name"
+              StringValue: "DDBDestinationTable"
+            -
+              Key: "type"
+              StringValue: "DynamoDBDataNode"
+            -
+              Key: "tableName"
+              StringValue: "#{myDDBTableName}"
+            -
+              Key: "onSuccess"
+              RefValue: "OnSuccessSns"
+        -
+          Id: Default
+          Name: "Default"
+          Fields:
+            -
+              Key: "failureAndRerunMode"
+              StringValue: "CASCADE"
+            -
+              Key: "resourceRole"
+              StringValue: "#{myDataPipelineResourceRole}"
+            -
+              Key: "role"
+              StringValue: "#{myDataPipelineRole}"
+            -
+              Key: "pipelineLogUri"
+              StringValue: !Sub 
+                - 's3://${bucket}'
+                - bucket: !Ref S3DataPipelineLogs
+            -
+              Key: "scheduleType"
+              StringValue: "ONDEMAND"
+            -
+              Key: "name"
+              StringValue: "Default"
+            -
+              Key: "type"
+              StringValue: "Default"
+        -
+          Id: "S3InputDataNode"
+          Name: "S3InputDataNode"
+          Fields:
+            -
+              Key: "directoryPath"
+              StringValue: "#{myInputS3Loc}"
+            -
+              Key: "name"
+              StringValue: "S3InputDataNode"
+            -
+              Key: "type"
+              StringValue: "S3DataNode"
+        -
+          Id: "OnSuccessSns"
+          Name: "OnSuccessSns"
+          Fields:
+            -
+              Key: "role"
+              StringValue: "#{myDataPipelineRole}"
+            -
+              Key: "name"
+              StringValue: "OnSuccessSns"
+            -
+              Key: "subject"
+              StringValue: "upload complete"
+            -
+              Key: "type"
+              StringValue: "SnsAlarm"
+            -
+              Key: "message"
+              StringValue: "DansMessage"
+            -
+              Key: "topicArn"
+              StringValue: "#{mySnsTopic}"
+      ParameterObjects:
+        -
+          Id: "myInputS3Loc"
+          Attributes:
+            -
+              Key: "description"
+              StringValue: "Input S3 folder"
+            -
+              Key: "type"
+              StringValue: "AWS::S3::ObjectKey"
+        -
+          Id: "myDDBTableName"
+          Attributes:
+            - 
+              Key: "description"
+              StringValue: "Target DynamoDB table name"
+            -
+              Key: "type"
+              StringValue: "String"
+        - 
+          Id: "myDDBWriteThroughputRatio"
+          Attributes:
+            -
+              Key: "default"
+              StringValue: "0.9"
+            -
+              Key: "description"
+              StringValue: "DynamoDB write throughput ratio"
+            - 
+              Key: "type"
+              StringValue: "Double"
+        -
+          Id: "myDBBRegion"
+          Attributes:
+            -
+              Key: "default"
+              StringValue: "us-east-1"
+            -
+              Key: "description"
+              StringValue: "Region of the DynamoDB table"
+            -
+              Key: "type"
+              StringValue: "String"
+      ParameterValues:
+        -
+          Id: "myDDBRegion"
+          StringValue:
+            !Ref AWS::Region
+        -
+          Id: "myDDBTableName"
+          StringValue: !ImportValue QueryTableName
+        -
+          Id: "myDDBWriteThroughputRatio" 
+          StringValue: "0.9"
+        -
+          Id: "myInputS3Loc"
+          StringValue: !Sub 
+            - 's3://${bucket}/'
+            - bucket: !Ref S3UploadQueryData
+        -
+          Id: "mySnsTopic"
+          StringValue: !Ref ProcessQueryDataUploadSns
+        -
+          Id: "myAccountId"
+          StringValue: !Ref AWS::AccountId
+        -
+          Id: myDataPipelineRole
+          StringValue: !Ref UploadQueryDataPipelineRole
+        -
+          Id: myDataPipelineResourceRole
+          StringValue: !Ref UploadQueryDataPipelineInstanceProfile

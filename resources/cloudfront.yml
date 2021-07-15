@@ -1,0 +1,41 @@
+Resources:
+  Distribution:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+          # S3 website is our origin, so we can have redirects
+          Origins:
+            - Id: !Sub 
+              - "S3-${websiteurl}"
+              - websiteurl: !GetAtt Website.DomainName
+              DomainName: !GetAtt Website.DomainName
+              S3OriginConfig:
+                OriginAccessIdentity: !Sub 
+                  - 'origin-access-identity/cloudfront/${originaccessitentity}'
+                  - originaccessitentity: !Ref CloudfrontOriginAccessIdentity
+          CustomErrorResponses:
+            - ErrorCode: 403
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            ForwardedValues:
+              Cookies:
+                Forward: none
+              Headers: []
+              QueryString: "false"
+            TargetOriginId: !Sub
+              - "S3-${websiteurl}"
+              - websiteurl: !GetAtt Website.DomainName
+            ViewerProtocolPolicy: redirect-to-https
+          DefaultRootObject: index.html
+          Enabled: "true"
+          HttpVersion: http2
+          PriceClass: PriceClass_100 # US, Canada, and Europe
+          ViewerCertificate:
+            CloudFrontDefaultCertificate: true
+
+  CloudfrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: "Retrobase OAI"

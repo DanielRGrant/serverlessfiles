@@ -1,0 +1,156 @@
+custom:
+  ProteinSequencesParquet: 'all-protein-sequences.parquet'
+  DnaSequencesParquet: 'all-dna-sequences.parquet'
+  S3UploadUniprotData: !ImportValue S3UploadUniprotData
+  output:
+    handler: scripts/output.handler
+    file: .build/upload-data-stack.json
+
+service: serverless-retrobase-upload-data
+frameworkVersion: '2'
+
+package:
+  individually: true
+  exclude:
+    - '*/**'
+    - '*'
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+  versionFunctions: false
+
+
+
+  stage: ${opt:stage}
+  region: us-east-1
+
+functions:
+  UploadQueryData:
+    name: sls-upload-query-data-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/upload_query_data.lambda_handler
+    memorySize: 2000
+    timeout: 900
+    role: UploadQueryDataRole
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+    package:
+      include:
+        - lambda_handlers_rest/upload_query_data.py
+
+  DnaQueryDataToS3:
+    name: sls-dna-query-data-to-s3-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/dna_query_data_to_s3.lambda_handler
+    role: DnaQueryDataToS3Role
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+      QUERY_SEQUENCES:
+        !Ref S3QuerySequences
+      DNA_SEQUENCES_PARQUET:
+        ${self:custom.DnaSequencesParquet}
+    layers:
+      - !ImportValue PandasLayerArn
+      - !ImportValue PyarrowLayerArn
+    package:
+      include:
+        - lambda_handlers_rest/dna_query_data_to_s3.py
+
+  ProteinQueryDataToS3:
+    name: sls-prot-query-data-to-s3-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/prot_query_data_to_s3.lambda_handler
+    role: ProteinQueryDataToS3Role
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+      QUERY_SEQUENCES:
+        !Ref S3QuerySequences
+      PROTEIN_SEQUENCES_PARQUET:
+        ${self:custom.ProteinSequencesParquet}
+    layers:
+      - !ImportValue PandasLayerArn
+      - !ImportValue PyarrowLayerArn
+    package:
+      include:
+        - lambda_handlers_rest/prot_query_data_to_s3.py
+
+  ClassDataToClassDb:
+    name: sls-class-data-to-class-db-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/class_data_to_classdb.lambda_handler
+    role: ClassDataToClassDbRole
+    environment:
+      QUERY_DB:
+        !ImportValue QueryTableName
+      CLASS_DB:
+        !ImportValue ClassTableName
+    package:
+      include:
+        - lambda_handlers_rest/class_data_to_classdb.py
+
+  ProteinDataToProtDb:
+    name: sls-protein-data-to-prot-db-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_uniprot_data.lambda_handler
+    role: ProteinDataToProtDbRole
+    events:
+      - s3:
+          bucket: !Ref S3UploadUniprotData
+          event: s3:ObjectCreated:*
+          existing: true
+    environment:
+      PROT_DB:
+        'Fn::ImportValue': ProtTableName
+      UPLOAD_BUCKET:
+        !Ref S3UploadUniprotData
+    package:
+      include:
+        - lambda_handlers_rest/get_uniprot_data.py
+
+  StartUploadQueryDataStepFunction:
+    name: sls-start-upload-query-data-step-function-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/start_upload_query_data_step_function.lambda_handler
+    role: StartUploadQueryDataStepFunctionRole
+    events:
+      - sns:
+          arn: !Ref ProcessQueryDataUploadSns
+          topicName: process-query-data-upload
+    environment:
+      STATE_MACHINE_ARN:
+        !GetAtt StepFuncUploadQueryData.Arn
+    package:
+      include:
+        - lambda_handlers_rest/start_upload_query_data_step_function.py
+
+resources:
+  - ${file(resources/dataUpload/s3buckets.yml)}
+  - ${file(resources/dataUpload/roles.yml)}
+  - ${file(resources/dataUpload/instanceprofile.yml)}
+  - ${file(resources/dataUpload/stepfunctions.yml)}
+  - ${file(resources/dataUpload/datapipeline.yml)}
+  - ${file(resources/dataUpload/sns.yml)}
+
+  - Outputs:
+      S3QuerySequences:
+        Value:
+          Ref: S3QuerySequences
+        Export:
+          Name: S3QuerySequences
+
+      ProteinSequencesParquet:
+        Value:
+          Ref: ProteinSequencesParquet
+        Export:
+          Name:  ${self:custom.ProteinSequencesParquet}
+
+      DnaSequencesParquet:
+        Value:
+          Ref: DnaSequencesParquet
+        Export:
+          Name: ${self:custom.DnaSequencesParquet}

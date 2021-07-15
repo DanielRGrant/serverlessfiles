@@ -1,0 +1,448 @@
+Resources:
+  UploadQueryDataRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-upload-query-data-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-upload-query-data-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-upload-query-data-${opt:stage}:*'
+        - PolicyName: sls-upload-query-data-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:PutItem
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
+                    - table: !ImportValue QueryTableName
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:s3:::${bucket}/*'
+                    - bucket: !Ref S3UploadQueryData
+
+  ClassDataToClassDbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-class-data-to-class-db-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-class-data-to-class-db-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-class-data-to-class-db-${opt:stage}:*'
+        - PolicyName: sls-class-data-to-class-db-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/class-index'
+                    - table: !ImportValue QueryTableName
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
+                    - table: !ImportValue ClassTableName
+
+  DnaQueryDataToS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-dna-query-data-to-s3-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-dna-query-data-to-s3-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-dna-query-data-to-s3-${opt:stage}:*'
+        - PolicyName: sls-dna-query-data-to-s3-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
+                    - table: !ImportValue QueryTableName
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:s3:::${bucket}/${key}'
+                    - bucket: !Ref S3QuerySequences
+                      key: ${self:custom.DnaSequencesParquet}
+
+  ProteinQueryDataToS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-protein-query-data-to-s3-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-protein-query-data-to-s3-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-protein-query-data-to-s3-${opt:stage}:*'
+        - PolicyName: sls-protein-query-data-to-s3-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
+                    - table: !ImportValue QueryTableName
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:s3:::${bucket}/${key}'
+                    - bucket: !Ref S3QuerySequences
+                      key: ${self:custom.ProteinSequencesParquet}
+
+  ProteinDataToProtDbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-protein-data-to-prot-db-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-protein-data-to-prot-db-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-protein-data-to-prot-db-${opt:stage}:*'
+        - PolicyName: sls-protein-data-to-prot-db-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
+                    - table: !ImportValue ProtTableName
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:s3:::${bucket}/*'
+                    - bucket: !Ref S3UploadUniprotData
+
+  StartUploadQueryDataStepFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-start-upload-query-data-step-function-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-start-upload-query-data-step-function-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-start-upload-query-data-step-function-${opt:stage}:*'
+        - PolicyName: sls-start-upload-query-data-step-function-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - states:StartExecution
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:states:${AWS::Region}:${AWS::AccountId}:stateMachine:${statemachine}'
+                    - statemachine: !GetAtt StepFuncUploadQueryData.Name
+  StepFuncUploadQueryDataRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-stepfunc-upload-query-data-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Sub 'states.${AWS::Region}.amazonaws.com'
+            Action: sts:AssumeRole   
+      Policies:
+        - PolicyName: sls-stepfunc-upload-query-data-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "lambda:InvokeFunction"
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:lambda:${AWS::Region}:473238680024:function:${function}:*'
+                    - function: !Ref ProteinQueryDataToS3LambdaFunction
+                  - !Sub 
+                    - 'arn:aws:lambda:${AWS::Region}:473238680024:function:${function}:*'
+                    - function: !Ref DnaQueryDataToS3LambdaFunction
+              - Effect: Allow
+                Action: 
+                  - lambda:InvokeFunction
+                Resource:
+                  - !Sub 
+                    - 'arn:aws:lambda:${AWS::Region}:473238680024:function:${function}'
+                    - function: !Ref ProteinQueryDataToS3LambdaFunction
+                  - !Sub 
+                    - 'arn:aws:lambda:${AWS::Region}:473238680024:function:${function}'
+                    - function: !Ref DnaQueryDataToS3LambdaFunction
+
+  UploadQueryDataPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-upload-query-data-pipeline-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - datapipeline.amazonaws.com
+                - elasticmapreduce.amazonaws.com
+            Action: sts:AssumeRole   
+      Policies:
+        - PolicyName: sls-upload-query-data-pipeline-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action:
+                  - cloudwatch:*
+                  - datapipeline:DescribeObjects
+                  - datapipeline:EvaluateExpression
+                  - dynamodb:BatchGetItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateTable
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:CancelSpotInstanceRequests
+                  - ec2:CreateSecurityGroup
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  - ec2:Describe*
+                  - ec2:ModifyImageAttribute
+                  - ec2:ModifyInstanceAttribute
+                  - ec2:RequestSpotInstances
+                  - ec2:RunInstances
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                  - ec2:TerminateInstances
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:DeleteSecurityGroup
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DetachNetworkInterface
+                  - elasticmapreduce:*
+                  - iam:PassRole
+                  - iam:ListRolePolicies
+                  - iam:GetRolePolicy 
+                  - s3:Get*
+                  - s3:List*
+                  - s3:Put*
+                  - sns:Publish
+                Resource: 
+                    "*"
+              - Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource: "*"
+                Condition: 
+                  StringLike: 
+                      iam:AWSServiceName: 
+                        elasticmapreduce.amazonaws.com
+                        spot.amazonaws.com
+
+  UploadQueryDataPipelineResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-upload-query-data-pipeline-resource-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole   
+      Policies:
+        - PolicyName: sls-upload-query-data-pipeline-resource-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action:
+                  - cloudwatch:*
+                  - datapipeline:*
+                  - dynamodb:*
+                  - ec2:Describe*
+                  - elasticmapreduce:AddJobFlowSteps
+                  - elasticmapreduce:Describe*
+                  - elasticmapreduce:ListInstance*
+                  - elasticmapreduce:ModifyInstanceGroups
+                  - iam:ListRolePolicies 
+                  - iam:GetRolePolicy
+                  - s3:*
+                  - sns:*
+                Resource: "*"
+  ProcessQueryDataUploadSnsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-process-query-data-upload-sns-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - sns.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-start-upload-query-data-step-function-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt StartUploadQueryDataStepFunctionLambdaFunction.Arn

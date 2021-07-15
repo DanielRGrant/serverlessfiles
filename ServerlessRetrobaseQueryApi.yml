@@ -1,0 +1,64 @@
+plugins:
+  - serverless-stack-output
+
+custom:
+  AuthLambdaName: sls-auth0integration-${opt:stage}
+  output:
+    handler: scripts/output.handler # Same syntax as you already know
+    file: .build/stack.json # toml, yaml, yml, and json format is available
+service: serverless-retrobase-resources
+app: retrobase
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  environment:
+    QUERY_API_RESOURCE_NAME: sls-retrobase-${opt:stage}
+  stage: ${opt:stage}
+  region: us-east-1
+
+resources:
+    - ${file(resources/s3Buckets.yml)}
+    - ${file(resources/CodePipeline.yml)}    
+    - ${file(resources/codebuild.yml)}
+    - ${file(resources/queryRestApi.yml)}
+    - ${file(resources/cloudfront.yml)}
+    
+    - Outputs:
+        QueryRestApi:
+          Value:
+            Ref: QueryRestApi
+          Export:
+            Name: QueryRestApi-ApiId
+
+        QueryRestApiRootResourceId:
+          Value:
+            Fn::GetAtt:
+              - QueryRestApi
+              - RootResourceId
+          Export:
+            Name: QueryRestApi-rootResourceId
+
+        S3MzidUpload:
+          Value:
+            Ref: S3MzidUpload
+          Export:
+            Name: S3MzidUpload
+
+        S3MzidParsed:
+          Value:
+            Ref: S3MzidParsed
+          Export:
+            Name: S3MzidParsed
+
+        S3MzidQueryResults:
+          Value:
+            Ref: S3MzidQueryResults
+          Export:
+            Name: S3MzidQueryResults
+
+        S3QueryResults:
+          Value:
+            Ref: S3QueryResults
+          Export:
+            Name: S3QueryResults

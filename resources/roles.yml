@@ -1,0 +1,820 @@
+Resources:
+  QuerySequencesRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-query-s3-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-query-s3-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-query-s3-${opt:stage}:*'
+        - PolicyName: sls-query-s3-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: ${self:custom.S3QuerySequences}
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3QueryResults
+
+  QueryReturnPageRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-query-return-page-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-query-return-page-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-query-return-page-${opt:stage}:*'
+        - PolicyName: sls-query-return-page-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3QueryResults
+
+  QueryFilterResultsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-query-filter-results-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-query-filter-results-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-query-filter-results-${opt:stage}:*'
+        - PolicyName: sls-query-filter-results-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3QueryResults
+
+  QuerySortByRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-query-sort-by-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-query-sort-by-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-query-sort-by-${opt:stage}:*'
+        - PolicyName: sls-query-sort-by-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3QueryResults
+
+  NavBarSearchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-navbar-search-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-navbar-search-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-navbar-search-${opt:stage}:*'
+        - PolicyName: sls-navbar-search-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue ClassTableName
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue ProtTableName
+
+  ClassDetailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-class-detail-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-class-detail-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-class-detail-${opt:stage}:*'
+        - PolicyName: sls-class-detail-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue ClassTableName
+
+  FamilyDetailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-family-detail-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-family-detail-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-family-detail-${opt:stage}:*'
+
+
+  KnownProteinDetailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-known-protein-detail-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-known-protein-detail-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-known-protein-detail-${opt:stage}:*'
+        - PolicyName: sls-known-protein-detail-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue ProtTableName
+
+  PredictedProteinDetailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-predicted-protein-detail-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-predicted-protein-detail-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-known-protein-detail-${opt:stage}:*'
+        - PolicyName: sls-predicted-protein-detail-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue ProtTableName
+
+
+
+  DnaDetailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-dna-detail-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-dna-detail-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-dna-detail-${opt:stage}:*'
+
+  PresignedUrlS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-presigned-url-s3-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-presign-url-s3-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-presigned-url-s3-${opt:stage}:*'
+        - PolicyName: sls-presign-url-s3-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidUpload
+  MzidParseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-parse-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-parse-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-parse-${opt:stage}:*'
+        - PolicyName: sls-mzid-parse-s3-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidUpload
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidParsed
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable
+  MzidQueryRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-query-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-query-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-query-${opt:stage}:*'
+        - PolicyName: sls-mzid-query-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidParsed
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: ${self:custom.S3MzidQueryResults}
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: ${self:custom.S3QuerySequences}
+
+  MzidResultsToDbRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-results-to-db-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-results-to-db-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-results-to-db-${opt:stage}:*'
+        - PolicyName: sls-mzid-results-to-db-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidQueryResults
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:GetItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidResultsTable
+
+  MzidCheckProgressRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-check-progress-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-check-progress-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-check-progress-${opt:stage}:*'
+        - PolicyName: sls-check-progress-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
+                    - table: !ImportValue MzidProgressTable
+
+  MzidGetResultsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-get-results-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-get-results-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-get-results-${opt:stage}:*'
+        - PolicyName: sls-mzid-get-results-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
+                    - table: !ImportValue MzidResultsTable
+
+  MzidRemoveDataRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-mzid-remove-data-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-mzid-remove-data-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-mzid-remove-data-${opt:stage}:*'
+        - PolicyName: sls-mzid-remove-data-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
+                    - table: !ImportValue MzidResultsTable
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidResultsTable
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub 
+                    - arn:aws:s3:::${bucket}/*
+                    - bucket: !ImportValue S3MzidUpload
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable
+
+  Auth0IntegrationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-auth0-integration-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-auth0-integration-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-auth0integration-${opt:stage}:*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole

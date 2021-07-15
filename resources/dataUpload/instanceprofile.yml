@@ -1,0 +1,7 @@
+Resources:
+  UploadQueryDataPipelineInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      InstanceProfileName: sls-upload-query-data-pipeline-instance-profile-${opt:stage}
+      Roles: 
+        - !Ref UploadQueryDataPipelineResourceRole

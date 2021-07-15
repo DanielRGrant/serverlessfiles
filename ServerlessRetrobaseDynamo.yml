@@ -1,0 +1,48 @@
+service: serverless-retrobase-dynamodb
+app: retrobase
+frameworkVersion: '2'
+
+custom:
+  output:
+    handler: scripts/output.handler
+    file: .build/dynamo-stack.json
+
+provider:
+  name: aws
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage}
+  region: us-east-1
+
+resources:
+  - ${file(resources/dynamoTables.yml)}
+
+  - Outputs:
+      MzidProgressTable:
+        Value:
+          Ref: MzidProgressTable
+        Export:
+          Name: MzidProgressTable
+      
+      MzidResultsTable:
+        Value:
+          Ref: MzidResultsTable
+        Export:
+          Name: MzidResultsTable
+
+      QueryTable:
+        Value:
+          Ref: QueryTable
+        Export:
+          Name: QueryTableName
+
+      ProtTable:
+        Value:
+          Ref: ProtTable
+        Export:
+          Name: ProtTableName
+          
+      ClassTable:
+        Value:
+          Ref: ClassTable
+        Export:
+          Name: ClassTableName

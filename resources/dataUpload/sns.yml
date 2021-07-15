@@ -1,0 +1,11 @@
+Resources:
+  ProcessQueryDataUploadSns:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: "Process query data upload"
+      FifoTopic: False
+      Subscription: 
+        - 
+          Endpoint: !GetAtt StartUploadQueryDataStepFunctionLambdaFunction.Arn
+          Protocol: lambda
+      TopicName: process-query-data-upload

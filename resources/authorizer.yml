@@ -1,0 +1,23 @@
+Resources:
+  Auth0Authorizer:
+    Type: AWS::ApiGateway::Authorizer  
+    Properties: 
+      Name: Auth0Authorizer
+      AuthorizerUri: !Sub
+        - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AuthLambdaName}/invocations
+        - AuthLambdaName: !Ref Auth0IntegrationLambdaFunction
+      IdentitySource: method.request.header.Authorization
+      IdentityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
+      RestApiId: 
+        !ImportValue QueryRestApi-ApiId
+      Type: TOKEN
+    DependsOn: Auth0IntegrationLambdaFunction
+
+  DefaultAuthorizerPermission:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        Action: lambda:InvokeFunction
+        FunctionName: !Sub
+          - arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${AuthLambdaName}
+          - AuthLambdaName: !Ref Auth0IntegrationLambdaFunction
+        Principal: apigateway.amazonaws.com

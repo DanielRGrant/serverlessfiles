@@ -1,0 +1,45 @@
+Resources:
+  QueryQueryDbPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: sls-query-querydb-${opt:stage}
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+            Resource:
+              - !Sub 
+                - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                - table: !ImportValue QueryTableName
+              - !Sub 
+                - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
+                - table: !ImportValue QueryTableName
+      Roles:
+        - !Ref FamilyDetailRole
+        - !Ref PredictedProteinDetailRole
+        - !Ref DnaDetailRole
+        - !Ref NavBarSearchRole
+
+
+  QueryProtDbPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: sls-known-protein-detail-${opt:stage}_main_policy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+            Resource:
+              - !Sub 
+                - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                - table: !ImportValue ProtTableName
+              - !Sub 
+                - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
+                - table: !ImportValue ProtTableName
+      Roles:
+        - !Ref KnownProteinDetailRole

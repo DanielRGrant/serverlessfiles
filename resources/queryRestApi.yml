@@ -1,0 +1,7 @@
+Resources:
+  QueryRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: sls-retrobase-${opt:stage}
+      Parameters:
+        endpointConfigurationTypes: REGIONAL

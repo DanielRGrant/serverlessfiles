@@ -1,0 +1,10 @@
+{
+  "QueryRestApi": "rdh8y7tvqj",
+  "QueryRestApiRootResourceId": "2ok6tzp50j",
+  "S3MzidUpload": "serverless-retrobase-resources-dev-s3mzidupload-15wp2lc6eioev",
+  "WebsiteURL": "http://serverless-retrobase-resources-dev-website-1sg2lvj2c6rs7.s3-website-us-east-1.amazonaws.com",
+  "S3MzidQueryResults": "serverless-retrobase-resources-s3mzidqueryresults-oact4hdj39xv",
+  "S3QueryResults": "serverless-retrobase-resources-dev-s3queryresults-1uex8tb0csm2q",
+  "ServerlessDeploymentBucketName": "serverless-retrobase-res-serverlessdeploymentbuck-bmckfshrf50k",
+  "S3MzidParsed": "serverless-retrobase-resources-dev-s3mzidparsed-12n15yg713yzt"
+}

@@ -1,0 +1,5 @@
+.serverless
+.npmignore
+artifacts/ervData.json
+artifacts/l1data.json
+node_modules/

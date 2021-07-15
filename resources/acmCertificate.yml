@@ -1,0 +1,10 @@
+Resources:
+  Certificate:
+    Type: "AWS::CertificateManager::Certificate"
+    Properties:
+      DomainName: ${self:custom.DomainName}
+      SubjectAlternativeNames:
+        - !Sub "www.${DomainName}"
+Outputs:
+  AcmCertificateARN:
+    Value: !Ref Certificate

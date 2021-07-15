@@ -1,0 +1,25 @@
+{
+  "class": "ERV",
+  "protein_data": [
+    {
+      "protein": "Pol",
+      "accession": "Q9BXR3"
+    },
+    {
+      "protein": "Gag",
+      "accession": "Q7LDI9"
+    },
+    {
+      "protein": "Pro",
+      "accession": "Q9Y6I0"
+    },
+    {
+      "protein": "Env",
+      "accession": "Q69384"
+    },
+    {
+      "protein": "Rec",
+      "accession": "Q69383"
+    }
+  ]
+}

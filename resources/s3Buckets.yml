@@ -1,0 +1,62 @@
+Resources:
+  Website:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        ErrorDocument: index.html
+        IndexDocument: index.html
+  S3MzidUpload:
+    Type: AWS::S3::Bucket
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: 
+              - '*'
+            AllowedMethods: 
+              - 'PUT'
+              - 'GET'
+            AllowedOrigins: 
+              - '*'
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  S3MzidParsed:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  S3MzidQueryResults:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  S3QueryResults:
+    Type: AWS::S3::Bucket
+    Properties:    
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: 
+              - '*'
+            AllowedMethods:
+              - 'GET'
+            AllowedOrigins: 
+              - '*'
+      PublicAccessBlockConfiguration: 
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt
+      - Website
+      - WebsiteURL
+    Description: URL for website hosted on S3

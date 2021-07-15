@@ -1,0 +1,300 @@
+Resources:
+  QueryTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-query-db
+        AttributeDefinitions:
+          - AttributeName: dna_id
+            AttributeType: S
+          - AttributeName: dna_id_lc
+            AttributeType: S
+          - AttributeName: prot_id
+            AttributeType: S
+          - AttributeName: prot_id_lc
+            AttributeType: S
+          - AttributeName: fam_lc
+            AttributeType: S
+          - AttributeName: class
+            AttributeType: S
+          - AttributeName: family
+            AttributeType: S
+        KeySchema:
+          - AttributeName: dna_id
+            KeyType: HASH
+          - AttributeName: prot_id
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - 
+            IndexName: prot_id_lc-index
+            KeySchema: 
+              - AttributeName: prot_id_lc
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - dna_id
+                - prot_id
+                - class
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: dna_id_lc-index
+            KeySchema: 
+              - AttributeName: dna_id_lc
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - dna_id
+                - prot_id
+                - class
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: fam_lc-index
+            KeySchema: 
+              - AttributeName: fam_lc
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - dna_id
+                - prot_id
+                - class
+                - family
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: prot_id_lc-index
+            KeySchema: 
+              - AttributeName: prot_id_lc
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - dna_id
+                - prot_id
+                - class
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: class-index
+            KeySchema: 
+              - AttributeName: class
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - dna_id
+                - prot_id
+                - class
+                - protein
+                - family
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: prot_id-index
+            KeySchema: 
+              - AttributeName: prot_id
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - coords
+                - prot_seq
+                - dna_id
+                - class
+                - protein
+                - family
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: family-index
+            KeySchema: 
+              - AttributeName: family
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - class
+                - dna_id
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+  WriteCapacityScalableTarget:
+      Type: AWS::ApplicationAutoScaling::ScalableTarget
+      Properties:
+        MaxCapacity: 200
+        MinCapacity: 40
+        ResourceId: !Join
+          - /
+          - - table
+            - !Ref QueryTable
+        RoleARN: !GetAtt ScalingRole.Arn
+        ScalableDimension: dynamodb:table:WriteCapacityUnits
+        ServiceNamespace: dynamodb
+  ScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - application-autoscaling.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:UpdateTable"
+                  - "cloudwatch:PutMetricAlarm"
+                  - "cloudwatch:DescribeAlarms"
+                  - "cloudwatch:GetMetricStatistics"
+                  - "cloudwatch:SetAlarmState"
+                  - "cloudwatch:DeleteAlarms"
+                Resource: "*"
+  WriteScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref WriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 70.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+  ClassTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-class-db
+        AttributeDefinitions:
+          - AttributeName: class
+            AttributeType: S       
+        KeySchema:
+          - AttributeName: class
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+  ProtTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-prot-db
+        AttributeDefinitions:
+          - AttributeName: protein
+            AttributeType: S       
+        KeySchema:
+          - AttributeName: protein
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+
+  MzidProgressTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-mzid-progress
+        AttributeDefinitions:
+          - AttributeName: file_id
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: file_id
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - 
+            IndexName: user_id-index
+            KeySchema: 
+              - AttributeName: user_id
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - file_name
+                - num_peptides
+                - progress
+                - submitted
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+  MzidResultsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-mzid-results
+        AttributeDefinitions:
+          - AttributeName: file_id#peptide_id#prot_id
+            AttributeType: S
+          - AttributeName: file_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: file_id#peptide_id#prot_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - 
+            IndexName: get_keys_by_file_id-index
+            KeySchema: 
+              - AttributeName: file_id
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - file_id#peptide_id#prot_id
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+          - 
+            IndexName: file_id-index
+            KeySchema: 
+              - AttributeName: file_id
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - peptide_id
+                - seq_observed
+                - protein
+                - prot_id
+                - dna_id
+                - class
+                - family
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+  

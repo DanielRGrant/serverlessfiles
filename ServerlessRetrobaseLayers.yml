@@ -1,0 +1,36 @@
+service: serverless-retrobase-layers
+app: retrobase
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage}
+  region: us-east-1
+
+layers:
+  PandasLayer:
+    package:
+      artifact: lambda_layers/pandas-layer.zip
+    compatibleRuntimes:
+      - python3.8
+    retain: false
+  PyarrowLayer:
+    package:
+      artifact: lambda_layers/pyarrow-layer.zip
+    compatibleRuntimes:
+      - python3.8
+    retain: false
+
+resources:
+  - Outputs:
+      PandasLayerArn:
+        Value:
+          Ref: PandasLayerLambdaLayer
+        Export:
+          Name: PandasLayerArn
+      PyarrowLayerArn:
+        Value:
+          Ref: PyarrowLayerLambdaLayer
+        Export:
+          Name: PyarrowLayerArn

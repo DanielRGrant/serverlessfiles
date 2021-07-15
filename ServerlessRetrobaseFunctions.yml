@@ -1,0 +1,509 @@
+custom:
+  S3QuerySequences: !ImportValue S3QuerySequences
+  S3MzidUpload: !ImportValue S3MzidUpload
+  S3MzidParsed: !ImportValue S3MzidParsed
+  S3MzidQueryResults: !ImportValue S3MzidQueryResults
+  ProteinSequencesParquet: 'all-protein-sequences.parquet'
+  DnaSequencesParquet: 'all-dna-sequences.parquet'
+
+service: serverless-retrobase-functions
+frameworkVersion: '2'
+package:
+  individually: true
+  exclude:
+    - '*/**'
+    - '*'
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+  versionFunctions: false
+  stage: ${opt:stage}
+  region: us-east-1
+  apiGateway:
+    restApiId:
+      'Fn::ImportValue': QueryRestApi-ApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': QueryRestApi-rootResourceId
+
+functions:
+  QuerySequences:
+    name: sls-query-s3-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/query_sequences_s3.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/query-sequences-s3
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: >
+                {
+                  "query": "$input.params("query")",
+                  "sequenceType": "$input.params("sequenceType")"
+                }
+    timeout: 120
+    memorySize: 1024
+    role: QuerySequencesRole
+    environment:
+      QUERY_SEQUENCES:
+        !ImportValue S3QuerySequences
+      PROTEIN_SEQUENCES_PARQUET:
+        ${self:custom.ProteinSequencesParquet}
+      DNA_SEQUENCES_PARQUET:
+        ${self:custom.DnaSequencesParquet}
+      RESULTS_BUCKET:
+        !ImportValue S3QueryResults
+    package:
+      include:
+        - lambda_handlers_rest/query_sequences_s3.py
+    
+
+  QueryReturnPage:
+    name: sls-query-return-page-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/query_return_page.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/query-return-page
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: >
+                {
+                  "key": "$input.params("key")",
+                  "filters": "$input.params("filters")",
+                  "page": "$input.params("page")",
+                  "sort_by": "$input.params("sort_by")"
+                }
+    memorySize: 128
+    role: QueryReturnPageRole
+    environment:
+      RESULTS_BUCKET:
+        !ImportValue S3QueryResults
+    package:
+      include:
+        - lambda_handlers_rest/query_return_page.py
+
+  QueryFilterResults:
+    name: sls-query-filter-results-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/query_filter_results.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/query-filter-results
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: >
+                {
+                  "key": "$input.params("key")",
+                  "filters": "$input.params("filters")",
+                  "page": "$input.params("page")",
+                  "sort_by": "$input.params("sort_by")"
+                }
+    timeout: 30
+    memorySize: 1024
+    role: QueryFilterResultsRole
+    environment:
+      RESULTS_BUCKET:
+        !ImportValue S3QueryResults
+    package:
+      include:
+        - lambda_handlers_rest/query_filter_results.py
+
+  QuerySortBy:
+    name: sls-query-sort-by-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/query_sort_by.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/query-sort-by
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: >
+                {
+                  "key": "$input.params("key")",
+                  "filters": "$input.params("filters")",
+                  "page": "$input.params("page")",
+                  "sort_by": "$input.params("sort_by")"
+                }
+    memorySize: 1024
+    role: QuerySortByRole
+    environment:
+      RESULTS_BUCKET:
+        !ImportValue S3QueryResults
+    package:
+      include:
+        - lambda_handlers_rest/query_sort_by.py
+
+  NavBarSearch:
+    name: sls-navbar-search-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/nav_searchbar_results.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/navbar-search
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"search": "$input.params("search")"}'
+    memorySize: 128
+    role: NavBarSearchRole
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+      PROT_DB:
+        'Fn::ImportValue': ProtTableName
+      CLASS_DB:
+        'Fn::ImportValue': ClassTableName
+    package:
+      include:
+        - lambda_handlers_rest/nav_searchbar_results.py
+  
+  ClassDetail:
+    name: sls-class-detail-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_class_detail.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/classdetail
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"class": "$input.params("class")"}'
+    memorySize: 128
+    role: ClassDetailRole
+    environment:
+      CLASS_DB:
+        'Fn::ImportValue': ClassTableName
+    package:
+      include:
+        - lambda_handlers_rest/get_class_detail.py
+
+  FamilyDetail:
+    name: sls-family-detail-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_family_detail.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/familydetail
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"family": "$input.params("family")"}'
+    memorySize: 128
+    role: FamilyDetailRole
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+    package:
+      include:
+        - lambda_handlers_rest/get_family_detail.py
+
+  KnownProteinDetail:
+    name: sls-known-protein-detail-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_known_prot_detail.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/knownproteindetail
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"protein": "$input.params("protein")"}'
+    memorySize: 128
+    role: KnownProteinDetailRole
+    environment:
+      PROT_DB:
+        'Fn::ImportValue': ProtTableName
+    package:
+      include:
+        - lambda_handlers_rest/get_known_prot_detail.py
+
+  PredictedProteinDetail:
+    name: sls-predicted-protein-detail-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_predicted_protein_detail.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/predictedproteindetail
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"prot_id": "$input.params("prot_id")"}'
+    memorySize: 128
+    role: PredictedProteinDetailRole
+    environment:
+      QUERY_DB:
+        'Fn::ImportValue': QueryTableName
+      PROT_DB:
+        'Fn::ImportValue': ProtTableName
+    package:
+      include:
+        - lambda_handlers_rest/get_predicted_protein_detail.py
+
+
+  DnaDetail:
+    name: sls-dna-detail-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/get_dna_detail.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/dnadetail
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"dna_id": "$input.params("dna_id")"}'
+    memorySize: 128
+    role: DnaDetailRole
+    environment:
+      QUERY_DB: 
+        'Fn::ImportValue': QueryTableName
+    package:
+      include:
+        - lambda_handlers_rest/get_dna_detail.py
+
+  PresignedUrlS3:
+    name: sls-presigned-url-s3-${opt:stage}
+    handler: lambda_handlers_rest/presigned_url_s3.handler
+    runtime: nodejs12.x
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/requestpresignedurls3
+          method: get
+          integration: lambda
+          cors: true
+          request:
+            template:
+              application/json: >
+                {
+                  "tissue": "$input.params('tissue')",
+                  "researcher": "$input.params('researcher')",
+                  "published": "$input.params('published')",
+                  "publication": "$input.params('publication')",
+                  "cancer": "$input.params('cancer')",
+                  "user_id": "$context.authorizer.stringKey",
+                  "file_name": "$input.params('file_name')",
+                  "uploadTe": "$input.params('uploadTe')"
+                }
+          authorizer:
+            name: Auth0Integration
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            identityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
+            type: TOKEN
+    memorySize: 128
+    role: PresignedUrlS3Role
+    environment:
+      BUCKET:
+        ${self:custom.S3MzidUpload}  
+    package:
+      include:
+        - lambda_handlers_rest/presigned_url_s3.js
+
+  MzidParse:
+    name: sls-mzid-parse-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_parse.lambda_handler
+    events:
+      - s3:
+          bucket: ${self:custom.S3MzidUpload}
+          event: s3:ObjectCreated:*
+          existing: true
+    memorySize: 1024
+    role: MzidParseRole
+    environment:
+      S3_MZID_PARSED:
+        'Fn::ImportValue': S3MzidParsed
+      MZID_PROGRESS_DB:
+        'Fn::ImportValue': MzidProgressTable
+    package:
+      include:
+        - lambda_handlers_rest/mzid_parse.py
+
+
+  MzidQuery:
+    name: sls-mzid-query-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_query.lambda_handler
+    events:
+      - s3:
+          bucket: ${self:custom.S3MzidParsed}
+          event: s3:ObjectCreated:*
+          existing: true
+    timeout: 300
+    memorySize: 1024
+    role: MzidQueryRole
+    environment:
+      QUERY_SEQUENCES:
+        'Fn::ImportValue': S3QuerySequences
+      S3_MZID_QUERY_RESULTS:
+        'Fn::ImportValue': S3MzidQueryResults
+      MZID_PROGRESS_DB:
+        'Fn::ImportValue': MzidProgressTable
+      PROTEIN_SEQUENCES_PARQUET:
+        ${self:custom.ProteinSequencesParquet}
+    package:
+      include:
+        - lambda_handlers_rest/mzid_query.py
+
+  MzidResultsToDb:
+    name: sls-mzid-results-to-db-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_results_to_db.lambda_handler
+    events:
+      - s3:
+          bucket: ${self:custom.S3MzidQueryResults}
+          event: s3:ObjectCreated:*
+          existing: true
+    timeout: 900
+    memorySize: 1024
+    role: MzidResultsToDbRole
+    environment:
+      MZID_PROGRESS_DB:
+        'Fn::ImportValue': MzidProgressTable
+      MZID_TE_DB:
+        'Fn::ImportValue': MzidResultsTable
+    package:
+      include:
+        - lambda_handlers_rest/mzid_results_to_db.py
+
+  MzidCheckProgress:
+    name: sls-mzid-check-progress-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_check_progress.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/mzid-check-progress
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: 
+                '{"user_id": "$context.authorizer.stringKey"}'
+          authorizer:
+            name: Auth0Integration
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            identityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
+            type: TOKEN
+    memorySize: 128
+    role: MzidCheckProgressRole
+    environment:
+      MZID_PROGRESS_DB:
+        'Fn::ImportValue': MzidProgressTable
+    package:
+      include:
+        - lambda_handlers_rest/mzid_check_progress.py
+
+  MzidGetResults:
+    name: sls-mzid-get-results-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_get_results.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/mzid-get-results
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"file_id": "$input.params("file_id")", "user_id": "$context.authorizer.stringKey"}'
+          authorizer:
+            name: Auth0Integration
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            identityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
+            type: TOKEN
+    memorySize: 1024
+    role: MzidGetResultsRole
+    environment:
+      MZID_TE_DB:
+        'Fn::ImportValue': MzidResultsTable
+    package:
+      include:
+        - lambda_handlers_rest/mzid_get_results.py
+
+  MzidRemoveData:
+    name: sls-mzid-remove-data-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/mzid_remove_data.lambda_handler
+    events:
+      - http:
+          path: sls-retrobase-${opt:stage}/mzid-remove-data
+          method: get
+          cors: true
+          integration: lambda
+          request:
+            template:
+              application/json: '{"file_id": "$input.params("file_id")", "user_id": "$context.authorizer.stringKey"}'
+            parameters:
+              headers:
+                'X-Amz-Invocation-Type': "'Event'"
+          authorizer:
+            name: Auth0Integration
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            identityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
+            type: TOKEN
+    timeout: 120
+    memorySize: 128
+    role: MzidRemoveDataRole
+    environment:
+      S3_MZID_UPLOAD:
+        'Fn::ImportValue': S3MzidUpload
+      MZID_PROGRESS_DB:
+        'Fn::ImportValue': MzidProgressTable
+      MZID_TE_DB:
+        'Fn::ImportValue': MzidResultsTable
+    package:
+      include:
+        - lambda_handlers_rest/mzid_remove_data.py
+
+  Auth0Integration:
+    name: sls-auth0integration-${opt:stage}
+    runtime: nodejs14.x
+    handler: lambda_handlers_rest/auth0integration/index.handler
+    memorySize: 128
+    role: Auth0IntegrationRole
+    environment:
+      JWKS_URI:
+        '{{resolve:secretsmanager:sls-retrobase-dev/auth0:SecretString:Auth0JwksUri}}'
+      AUDIENCE:
+        '{{resolve:secretsmanager:sls-retrobase-dev/auth0:SecretString:Auth0Audience}}'
+      TOKEN_ISSUER:
+        '{{resolve:secretsmanager:sls-retrobase-dev/auth0:SecretString:Auth0Domain}}'
+    package:
+      include:
+        - lambda_handlers_rest/auth0integration/index.js
+        - lambda_handlers_rest/auth0integration/node_modules/**
+        - lambda_handlers_rest/auth0integration/lib.js
+
+
+resources:
+  - ${file(resources/roles.yml)}
+  - ${file(resources/policies.yml)}

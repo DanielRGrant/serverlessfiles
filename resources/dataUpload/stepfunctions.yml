@@ -1,0 +1,36 @@
+Resources:
+  StepFuncUploadQueryData:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString: >
+        {
+          "Comment": "Upload query data from S3 and create query parquet files",
+          "StartAt": "DnaQueryDataToS3",
+          "States": {
+            "DnaQueryDataToS3": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:${region}:${accountid}:function:${dnaquerydatatos3}",
+              "Parameters": {
+                "InvocationType": "Event"
+              },
+              "Next": "ProtQueryDataToS3"
+            },
+            "ProtQueryDataToS3": {
+              "Type": "Task",
+              "Resource": "arn:aws:lambda:${region}:${accountid}:function:${protquerydatatos3}",
+              "Parameters": {
+                "InvocationType": "Event"
+              },
+              "End": true
+            }
+          }
+        }
+      DefinitionSubstitutions: 
+        uploadquerydata : !Ref UploadQueryDataLambdaFunction
+        classdatatoclassdb: !Ref ClassDataToClassDbLambdaFunction
+        dnaquerydatatos3: !Ref DnaQueryDataToS3LambdaFunction
+        protquerydatatos3: !Ref ProteinQueryDataToS3LambdaFunction
+        region: !Ref AWS::Region
+        accountid: !Ref AWS::AccountId
+      RoleArn: !GetAtt StepFuncUploadQueryDataRole.Arn
+      StateMachineName: sls-stepfunc-upload-query-data
