@@ -25,13 +25,9 @@ const UploadData = (bucket, file) => {
         }
     });
 };
-
-//const stack = require("./.build/stack.json")
-//const bucket = stack[process.argv[2]]
-//
-const file = process.argv[3]
-const bucket = "serverless-retrobase-upload-d-s3uploaduniprotdata-1obqi5y7hj143"
-
+const stack = require(process.argv[2])
+const bucket = stack[process.argv[3]]
+const file = process.argv[4]
 
 UploadData ( bucket, file )
 

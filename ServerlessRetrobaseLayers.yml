@@ -28,9 +28,9 @@ resources:
         Value:
           Ref: PandasLayerLambdaLayer
         Export:
-          Name: PandasLayerArn
+          Name: PandasLayerArn-${opt:stage}
       PyarrowLayerArn:
         Value:
           Ref: PyarrowLayerLambdaLayer
         Export:
-          Name: PyarrowLayerArn
+          Name: PyarrowLayerArn-${opt:stage}

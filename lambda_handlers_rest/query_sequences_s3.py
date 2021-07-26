@@ -20,9 +20,7 @@ results_bucket = os.environ["RESULTS_BUCKET"]
 s3_client = boto3.client('s3')
 s3_res = boto3.resource("s3")
 
-new_key = secrets.token_urlsafe(16)
-
-def stream_data_to_s3(key, items, bucket, metadata):
+def stream_data_to_s3(key, items, bucket):
     buff = io.BytesIO()
     for i in range(len(items)):
         item = items[i]
@@ -31,7 +29,7 @@ def stream_data_to_s3(key, items, bucket, metadata):
         if not i == len(items)-1:
             buff.write("\n".encode())
 
-    s3_res.Object(results_bucket, key).put(Body=buff.getvalue(), Metadata=metadata)
+    s3_res.Object(results_bucket, key).put(Body=buff.getvalue())
     return
 
 def paginate(mylist, n):
@@ -52,13 +50,46 @@ def get_unique(data, keys):
                 unique[k].append(item[k])
     return unique
 
+def s3_select(bucket, key, sql):
+    resp = s3_client.select_object_content(
+        Bucket=bucket,
+        Key=key,
+        ExpressionType='SQL',
+        Expression=sql,
+        InputSerialization={'Parquet': {}},
+        OutputSerialization = {'JSON': {}},
+    )
+
+    # extract data from response            
+    records = []
+    for event in resp['Payload']:
+        if 'Records' in event:
+            records_tmp = event['Records']['Payload'].decode('utf-8')
+            records.append(records_tmp)
+    records = ''.join(records)
+    records = records.split('\n')
+    items = []
+    for record in records:
+        try:
+            item = json.loads(record)
+            items.append(item)
+        except:
+            pass
+    return items
+
 def lambda_handler(event, context):
     try:
         logger.info(f'Event: {event}')
-        
+        key = secrets.token_urlsafe(16)
+        logger.info(f'Key: {key}')
         seq = event["query"]
         seq_type = event["sequenceType"]
-
+        sort_by = "dna_id" if seq_type == "dna" else "protein"
+        filters = "class=&family=&protein="
+        
+        query_key = key + "/query"
+        pag_key = f'{key}/paginated/filters/{filters}/sortby/{sort_by}/descending/False'
+        print(query_key)
         if event["sequenceType"] == "dna":
             sequences_key = os.environ["DNA_SEQUENCES_PARQUET"]
         elif event["sequenceType"] == "protein":
@@ -68,38 +99,15 @@ def lambda_handler(event, context):
                 "statusCode": 400,
                 "message": "Missing sequenceType parameter"
             }
-
+            
         logger.info(f'Beginning querying sequence...')
 
         sequence_header = "prot_seq" if seq_type == "protein" else "dna_seq" # header in parquet
+        sql = f"SELECT * FROM S3object s where s.\"{sequence_header}\" LIKE '%{seq}%'"
+        items = s3_select(sequences_bucket, sequences_key, sql)
 
-        resp = s3_client.select_object_content(
-            Bucket=sequences_bucket,
-            Key=sequences_key,
-            ExpressionType='SQL',
-            Expression=f"SELECT * FROM S3object s where s.\"{sequence_header}\" LIKE '%{seq}%'",
-            InputSerialization={'Parquet': {}},
-            OutputSerialization = {'JSON': {}},
-        )
-
-    # extract data from response            
-        records = []
-        for event in resp['Payload']:
-            if 'Records' in event:
-                records_tmp = event['Records']['Payload'].decode('utf-8')
-                records.append(records_tmp)
-        records = ''.join(records)
-        records = records.split('\n')
-        items = []
-        for record in records:
-            try:
-                item = json.loads(record)
-                items.append(item)
-            except:
-                logger.info("Following record not json (okay if empty): ")
-        
         if len(items):
-            sorted_items = sorted(items, key=itemgetter('dna_id'))
+            sorted_items = sorted(items, key=itemgetter(sort_by))
             tmp = paginate(sorted_items, n=100)
             paginated = [{"page": str(i+1), "data": tmp[i]} for i in range(0, len(tmp))]
 
@@ -107,19 +115,18 @@ def lambda_handler(event, context):
             metadata={
                 "num_items": str(len(items)),
                 "num_pages": str(len(paginated)),
-                "seq_type": "DNA" if seq_type == "dna" else "Protein"
+                "seq_type": "DNA" if seq_type == "dna" else "Protein",
+                "unique": unique
             }
             stream_data_to_s3(
-                key=new_key+"/paginated",
-                items=paginated+[{"uniquevals": unique}],
-                bucket=results_bucket,
-                metadata=metadata
+                key=pag_key,
+                items=paginated+[{"metadata": metadata}],
+                bucket=results_bucket
             )
             stream_data_to_s3(
-                key=new_key+"/query",
-                items=items+[{"uniquevals": unique}],
-                bucket=results_bucket,
-                metadata=metadata
+                key=query_key,
+                items=items+[{"metadata": metadata}],
+                bucket=results_bucket
             )
             data = paginated[0]["data"]
             pages = len(paginated)
@@ -127,7 +134,7 @@ def lambda_handler(event, context):
         else:
             data = []
             pages = 0
-            unique={}
+            unique= {}    
             
         seq_type = "DNA" if seq_type == "dna" else "Protein"
 
@@ -135,7 +142,7 @@ def lambda_handler(event, context):
             "statusCode": 200,
             "body": json.dumps({
                 "data": data,
-                "key": new_key,
+                "key": key,
                 "page": "1",
                 "unique": unique,
                 "num_pages": pages,

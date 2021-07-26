@@ -2,7 +2,7 @@ Resources:
   CodeBuild:
     Type: 'AWS::CodeBuild::Project'
     Properties:
-      Name: sls-retrobase-frontend-CodeBuild
+      Name: sls-retrobase-frontend-CodeBuild-${opt:stage}
       ServiceRole: !GetAtt CodeBuildRole.Arn
       Artifacts:
         Type: CODEPIPELINE

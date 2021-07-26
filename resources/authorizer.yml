@@ -9,7 +9,7 @@ Resources:
       IdentitySource: method.request.header.Authorization
       IdentityValidationExpression: ^Bearer [-0-9a-zA-z\.]*$
       RestApiId: 
-        !ImportValue QueryRestApi-ApiId
+        !ImportValue QueryRestApi-ApiId-${opt:stage}
       Type: TOKEN
     DependsOn: Auth0IntegrationLambdaFunction
 

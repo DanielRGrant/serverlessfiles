@@ -22,12 +22,12 @@ bucket = os.environ["RESULTS_BUCKET"]
 s3_client = boto3.client('s3')
 
 
-def get_unique(bucket, key):
+def get_metadata(bucket, key):
     resp = s3_client.select_object_content(
         Bucket=bucket,
         Key=key,
         ExpressionType='SQL',
-        Expression="SELECT * FROM S3object s where s.\"uniquevals\" IS NOT MISSING",
+        Expression="SELECT * FROM S3object s where s.\"metadata\" IS NOT MISSING",
         InputSerialization={'JSON': {'Type': 'LINES'}},
         OutputSerialization = {'JSON': {}},
     )
@@ -35,8 +35,8 @@ def get_unique(bucket, key):
     for event in resp['Payload']:
         if 'Records' in event:
             tmp = event['Records']['Payload'].decode('utf-8')
-            unique = json.loads(tmp)
-    return unique["uniquevals"]
+            metadata = json.loads(tmp)
+    return metadata["metadata"]
 
 def lambda_handler(event, context):
     try:
@@ -45,20 +45,23 @@ def lambda_handler(event, context):
         key = event['key']
         filters = event['filters']
         page = event["page"]
+        sort_by = event["sort_by"]
+        desc = True if event["desc"].lower() == "true" else False
 
+        tmp = collections.OrderedDict(sorted(filters.items()))
+        filters_suffix = urllib.parse.urlencode(tmp)
+        is_filters = all(v=="" for v in filters.values())
+        query_key = (
+            key+"/query" 
+            if is_filters
+            else f'{key}/query/filters/{filters_suffix}'
+        )
+        metadata = get_metadata(bucket, query_key)
+        seq_type = metadata['seq_type']        
+        if not sort_by:
+            sort_by = "dna_id" if seq_type == 'DNA' else 'protein'
 
-        #check if a filter value is submitted
-        isfilters = False
-        for f in filters:
-            if filters[f]:
-                isfilters = True
-        if isfilters:
-            tmp = collections.OrderedDict(sorted(filters.items()))
-            filters_suffix = urllib.parse.urlencode(tmp)
-            pag_key = key + "/paginated/" + filters_suffix
-            
-        else:
-            pag_key = key + "/paginated"
+        pag_key = f'{key}/paginated/filters/{filters_suffix}/sortby/{sort_by}/descending/{desc}'
 
         resp = s3_client.select_object_content(
             Bucket=bucket,
@@ -75,35 +78,24 @@ def lambda_handler(event, context):
             if 'Records' in event:
                 records_tmp = event['Records']['Payload'].decode('utf-8')
                 records.append(records_tmp)
-        logger.info(len(records))
         records = ''.join(records)
         records = records.strip('\n')
-        logger.info(records)
         records = json.loads(records)
         data = records["data"]
-
-        unique = get_unique(bucket, pag_key)
-        
-        metadata = s3_client.head_object(Bucket=bucket, Key=pag_key)['Metadata']
-        num_pages = metadata["num_pages"]
-        num_items = metadata["num_items"]
-        seq_type = metadata["seq_type"]
-        
         return {
             "statusCode": 200,
             "body": json.dumps({
                 "data": data,
                 "key": key,
                 "page": page,
-                "unique": unique,
-                "num_pages": num_pages,
-                "num_items": num_items,
-                "seq_type": 
+                "unique": metadata["unique"],
+                "num_pages": metadata["num_pages"],
+                "num_items": metadata["num_items"],
+                "seq_type": seq_type
             })
         }
 
     except (ValueError, botocore.exceptions.ClientError) as error:
-        raise(error)
         return {
             "statusCode": 404,
             "body": None

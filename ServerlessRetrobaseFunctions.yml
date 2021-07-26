@@ -1,8 +1,8 @@
 custom:
-  S3QuerySequences: !ImportValue S3QuerySequences
-  S3MzidUpload: !ImportValue S3MzidUpload
-  S3MzidParsed: !ImportValue S3MzidParsed
-  S3MzidQueryResults: !ImportValue S3MzidQueryResults
+  S3QuerySequences: !ImportValue S3QuerySequences-${opt:stage}
+  S3MzidUpload: !ImportValue S3MzidUpload-${opt:stage}
+  S3MzidParsed: !ImportValue S3MzidParsed-${opt:stage}
+  S3MzidQueryResults: !ImportValue S3MzidQueryResults-${opt:stage}
   ProteinSequencesParquet: 'all-protein-sequences.parquet'
   DnaSequencesParquet: 'all-dna-sequences.parquet'
 
@@ -23,9 +23,9 @@ provider:
   region: us-east-1
   apiGateway:
     restApiId:
-      'Fn::ImportValue': QueryRestApi-ApiId
+      !ImportValue QueryRestApi-ApiId-${opt:stage}
     restApiRootResourceId:
-      'Fn::ImportValue': QueryRestApi-rootResourceId
+      !ImportValue QueryRestApi-rootResourceId-${opt:stage}
 
 functions:
   QuerySequences:
@@ -50,7 +50,7 @@ functions:
     role: QuerySequencesRole
     environment:
       QUERY_SEQUENCES:
-        !ImportValue S3QuerySequences
+        !ImportValue S3QuerySequences-${opt:stage}
       PROTEIN_SEQUENCES_PARQUET:
         ${self:custom.ProteinSequencesParquet}
       DNA_SEQUENCES_PARQUET:
@@ -147,6 +147,24 @@ functions:
       include:
         - lambda_handlers_rest/query_sort_by.py
 
+  QueryDeleteOld:
+    name: sls-query-delete-old-${opt:stage}
+    runtime: python3.8
+    handler: lambda_handlers_rest/query_delete_old.lambda_handler
+    events:
+      - schedule:
+          rate: rate(6 hours)
+    memorySize: 1024
+    role: QuerySortByRole
+    environment:
+      RESULTS_BUCKET:
+        !ImportValue S3QueryResults
+      TIME_DELTA: 6
+    package:
+      include:
+        - lambda_handlers_rest/query_delete_old.py
+
+
   NavBarSearch:
     name: sls-navbar-search-${opt:stage}
     runtime: python3.8
@@ -164,11 +182,11 @@ functions:
     role: NavBarSearchRole
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
       PROT_DB:
-        'Fn::ImportValue': ProtTableName
+        !ImportValue ProtTable-${opt:stage}
       CLASS_DB:
-        'Fn::ImportValue': ClassTableName
+        !ImportValue ClassTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/nav_searchbar_results.py
@@ -190,7 +208,7 @@ functions:
     role: ClassDetailRole
     environment:
       CLASS_DB:
-        'Fn::ImportValue': ClassTableName
+        !ImportValue ClassTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/get_class_detail.py
@@ -212,7 +230,7 @@ functions:
     role: FamilyDetailRole
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/get_family_detail.py
@@ -234,7 +252,7 @@ functions:
     role: KnownProteinDetailRole
     environment:
       PROT_DB:
-        'Fn::ImportValue': ProtTableName
+        'Fn::ImportValue': ProtTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/get_known_prot_detail.py
@@ -256,9 +274,9 @@ functions:
     role: PredictedProteinDetailRole
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
       PROT_DB:
-        'Fn::ImportValue': ProtTableName
+        !ImportValue ProtTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/get_predicted_protein_detail.py
@@ -281,7 +299,7 @@ functions:
     role: DnaDetailRole
     environment:
       QUERY_DB: 
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/get_dna_detail.py
@@ -333,17 +351,20 @@ functions:
           bucket: ${self:custom.S3MzidUpload}
           event: s3:ObjectCreated:*
           existing: true
+    timeOut: 60
     memorySize: 1024
     role: MzidParseRole
     environment:
       S3_MZID_PARSED:
-        'Fn::ImportValue': S3MzidParsed
+        !ImportValue S3MzidParsed-${opt:stage}
       MZID_PROGRESS_DB:
-        'Fn::ImportValue': MzidProgressTable
+        !ImportValue MzidProgressTable-${opt:stage}
+      MZID_PARTS_COMPLETE:
+        !ImportValue MzidPartsCompleteTable-${opt:stage}
+      ITEMS_PER_PAGE: 350
     package:
       include:
         - lambda_handlers_rest/mzid_parse.py
-
 
   MzidQuery:
     name: sls-mzid-query-${opt:stage}
@@ -354,16 +375,18 @@ functions:
           bucket: ${self:custom.S3MzidParsed}
           event: s3:ObjectCreated:*
           existing: true
-    timeout: 300
+    timeout: 600
     memorySize: 1024
     role: MzidQueryRole
     environment:
       QUERY_SEQUENCES:
-        'Fn::ImportValue': S3QuerySequences
+        !ImportValue S3QuerySequences-${opt:stage}
       S3_MZID_QUERY_RESULTS:
-        'Fn::ImportValue': S3MzidQueryResults
+        !ImportValue S3MzidQueryResults-${opt:stage}
       MZID_PROGRESS_DB:
-        'Fn::ImportValue': MzidProgressTable
+        !ImportValue MzidProgressTable-${opt:stage}
+      MZID_PARTS_COMPLETE:
+        !ImportValue MzidPartsCompleteTable-${opt:stage}
       PROTEIN_SEQUENCES_PARQUET:
         ${self:custom.ProteinSequencesParquet}
     package:
@@ -384,9 +407,11 @@ functions:
     role: MzidResultsToDbRole
     environment:
       MZID_PROGRESS_DB:
-        'Fn::ImportValue': MzidProgressTable
+        !ImportValue MzidProgressTable-${opt:stage}
       MZID_TE_DB:
-        'Fn::ImportValue': MzidResultsTable
+        !ImportValue MzidResultsTable-${opt:stage}
+      MZID_PARTS_COMPLETE_DB:
+        !ImportValue MzidPartsCompleteTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/mzid_results_to_db.py
@@ -415,7 +440,9 @@ functions:
     role: MzidCheckProgressRole
     environment:
       MZID_PROGRESS_DB:
-        'Fn::ImportValue': MzidProgressTable
+        !ImportValue MzidProgressTable-${opt:stage}
+      MZID_PARTS_COMPLETE_DB:
+        !ImportValue MzidPartsCompleteTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/mzid_check_progress.py
@@ -443,7 +470,7 @@ functions:
     role: MzidGetResultsRole
     environment:
       MZID_TE_DB:
-        'Fn::ImportValue': MzidResultsTable
+        !ImportValue MzidResultsTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/mzid_get_results.py
@@ -475,11 +502,11 @@ functions:
     role: MzidRemoveDataRole
     environment:
       S3_MZID_UPLOAD:
-        'Fn::ImportValue': S3MzidUpload
+        !ImportValue S3MzidUpload-${opt:stage}
       MZID_PROGRESS_DB:
-        'Fn::ImportValue': MzidProgressTable
+        !ImportValue MzidProgressTable-${opt:stage}
       MZID_TE_DB:
-        'Fn::ImportValue': MzidResultsTable
+        !ImportValue MzidResultsTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/mzid_remove_data.py

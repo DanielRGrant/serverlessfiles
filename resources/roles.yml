@@ -47,7 +47,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3QueryResults
+                    - bucket: !ImportValue S3QueryResults-${opt:stage}
 
   QueryReturnPageRole:
     Type: AWS::IAM::Role
@@ -89,7 +89,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3QueryResults
+                    - bucket: !ImportValue S3QueryResults-${opt:stage}
 
   QueryFilterResultsRole:
     Type: AWS::IAM::Role
@@ -132,7 +132,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3QueryResults
+                    - bucket: !ImportValue S3QueryResults-${opt:stage}
 
   QuerySortByRole:
     Type: AWS::IAM::Role
@@ -175,7 +175,51 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3QueryResults
+                    - bucket: !ImportValue S3QueryResults-${opt:stage}
+
+  QueryDeleteOldRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sls-query-delete-old-${opt:stage}_role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: sls-query-delete-old-${opt:stage}_basiclogging_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - 'Fn::Join':
+                    - ':'
+                    -
+                      - 'arn:aws:logs'
+                      - Ref: 'AWS::Region'
+                      - Ref: 'AWS::AccountId'
+                      - 'log-group:/aws/lambda/sls-query-delete-old-${opt:stage}:*'
+        - PolicyName: sls-query-delete-old-${opt:stage}_main_policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - s3:ListBucket
+                Resource: arn:aws:s3:::serverless-retrobase-resources-dev-s3queryresults-1uex8tb0csm2q
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObjectVersion
+                  - s3:DeleteObject
+                Resource: arn:aws:s3:::serverless-retrobase-resources-dev-s3queryresults-1uex8tb0csm2q/*
 
   NavBarSearchRole:
     Type: AWS::IAM::Role
@@ -217,10 +261,10 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue ClassTableName
+                    - table: !ImportValue ClassTable-${opt:stage}
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue ProtTableName
+                    - table: !ImportValue ProtTable-${opt:stage}
 
   ClassDetailRole:
     Type: AWS::IAM::Role
@@ -262,7 +306,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue ClassTableName
+                    - table: !ImportValue ClassTable-${opt:stage}
 
   FamilyDetailRole:
     Type: AWS::IAM::Role
@@ -336,7 +380,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue ProtTableName
+                    - table: !ImportValue ProtTable-${opt:stage}
 
   PredictedProteinDetailRole:
     Type: AWS::IAM::Role
@@ -378,7 +422,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue ProtTableName
+                    - table: !ImportValue ProtTable-${opt:stage}
 
 
 
@@ -454,7 +498,7 @@ Resources:
                 Resource:
                   - !Sub
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidUpload
+                    - bucket: !ImportValue S3MzidUpload-${opt:stage}
   MzidParseRole:
     Type: AWS::IAM::Role
     Properties:
@@ -495,14 +539,14 @@ Resources:
                 Resource:
                   - !Sub
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidUpload
+                    - bucket: !ImportValue S3MzidUpload-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:PutObject
                 Resource:
                   - !Sub
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidParsed
+                    - bucket: !ImportValue S3MzidParsed-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
@@ -511,7 +555,15 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidPartsCompleteTable-${opt:stage}
+
   MzidQueryRole:
     Type: AWS::IAM::Role
     Properties:
@@ -552,7 +604,7 @@ Resources:
                 Resource:
                   - !Sub
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidParsed
+                    - bucket: !ImportValue S3MzidParsed-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -567,7 +619,14 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidPartsCompleteTable-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:GetObject
@@ -616,14 +675,14 @@ Resources:
                 Resource:
                   - !Sub
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidQueryResults
+                    - bucket: !ImportValue S3MzidQueryResults-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
@@ -631,7 +690,14 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidResultsTable
+                    - table: !ImportValue MzidResultsTable-${opt:stage}
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidPartsCompleteTable-${opt:stage}
 
   MzidCheckProgressRole:
     Type: AWS::IAM::Role
@@ -673,7 +739,21 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Sub 
+                    - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
+                    - table: !ImportValue MzidPartsCompleteTable-${opt:stage}
 
   MzidGetResultsRole:
     Type: AWS::IAM::Role
@@ -716,7 +796,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
-                    - table: !ImportValue MzidResultsTable
+                    - table: !ImportValue MzidResultsTable-${opt:stage}
 
   MzidRemoveDataRole:
     Type: AWS::IAM::Role
@@ -760,31 +840,31 @@ Resources:
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
-                    - table: !ImportValue MzidResultsTable
+                    - table: !ImportValue MzidResultsTable-${opt:stage}
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidResultsTable
+                    - table: !ImportValue MzidResultsTable-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:DeleteObject
                 Resource:
                   - !Sub 
                     - arn:aws:s3:::${bucket}/*
-                    - bucket: !ImportValue S3MzidUpload
+                    - bucket: !ImportValue S3MzidUpload-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:DeleteItem
                 Resource:
                   - !Sub 
                     - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                    - table: !ImportValue MzidProgressTable
+                    - table: !ImportValue MzidProgressTable-${opt:stage}
 
   Auth0IntegrationRole:
     Type: AWS::IAM::Role

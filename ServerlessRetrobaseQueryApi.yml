@@ -4,11 +4,10 @@ plugins:
 custom:
   AuthLambdaName: sls-auth0integration-${opt:stage}
   output:
-    handler: scripts/output.handler # Same syntax as you already know
-    file: .build/stack.json # toml, yaml, yml, and json format is available
+    handler: scripts/output.handler
+    file: .build/queryApiOutput.json
 service: serverless-retrobase-resources
 app: retrobase
-frameworkVersion: '2'
 
 provider:
   name: aws
@@ -29,7 +28,7 @@ resources:
           Value:
             Ref: QueryRestApi
           Export:
-            Name: QueryRestApi-ApiId
+            Name: QueryRestApi-ApiId-${opt:stage}
 
         QueryRestApiRootResourceId:
           Value:
@@ -37,28 +36,28 @@ resources:
               - QueryRestApi
               - RootResourceId
           Export:
-            Name: QueryRestApi-rootResourceId
+            Name: QueryRestApi-rootResourceId-${opt:stage}
 
         S3MzidUpload:
           Value:
             Ref: S3MzidUpload
           Export:
-            Name: S3MzidUpload
+            Name: S3MzidUpload-${opt:stage}
 
         S3MzidParsed:
           Value:
             Ref: S3MzidParsed
           Export:
-            Name: S3MzidParsed
+            Name: S3MzidParsed-${opt:stage}
 
         S3MzidQueryResults:
           Value:
             Ref: S3MzidQueryResults
           Export:
-            Name: S3MzidQueryResults
+            Name: S3MzidQueryResults-${opt:stage}
 
         S3QueryResults:
           Value:
             Ref: S3QueryResults
           Export:
-            Name: S3QueryResults
+            Name: S3QueryResults-${opt:stage}

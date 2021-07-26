@@ -13,10 +13,10 @@ Resources:
             Resource:
               - !Sub 
                 - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                - table: !ImportValue QueryTableName
+                - table: !ImportValue QueryTableName-${opt:stage}
               - !Sub 
                 - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
-                - table: !ImportValue QueryTableName
+                - table: !ImportValue QueryTableName-${opt:stage}
       Roles:
         - !Ref FamilyDetailRole
         - !Ref PredictedProteinDetailRole
@@ -37,9 +37,9 @@ Resources:
             Resource:
               - !Sub 
                 - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}
-                - table: !ImportValue ProtTableName
+                - table: !ImportValue ProtTable-${opt:stage}
               - !Sub 
                 - arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/*
-                - table: !ImportValue ProtTableName
+                - table: !ImportValue ProtTable-${opt:stage}
       Roles:
         - !Ref KnownProteinDetailRole

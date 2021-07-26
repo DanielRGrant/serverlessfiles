@@ -2,7 +2,7 @@ Resources:
   QueryTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: sls-query-db
+        TableName: sls-query-db-${opt:stage}
         AttributeDefinitions:
           - AttributeName: dna_id
             AttributeType: S
@@ -190,7 +190,7 @@ Resources:
   ClassTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: sls-class-db
+        TableName: sls-class-db-${opt:stage}
         AttributeDefinitions:
           - AttributeName: class
             AttributeType: S       
@@ -204,7 +204,7 @@ Resources:
   ProtTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: sls-prot-db
+        TableName: sls-prot-db-${opt:stage}
         AttributeDefinitions:
           - AttributeName: protein
             AttributeType: S       
@@ -219,7 +219,7 @@ Resources:
   MzidProgressTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: sls-mzid-progress
+        TableName: sls-mzid-progress-${opt:stage}
         AttributeDefinitions:
           - AttributeName: file_id
             AttributeType: S
@@ -253,7 +253,7 @@ Resources:
   MzidResultsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: sls-mzid-results
+        TableName: sls-mzid-results-${opt:stage}
         AttributeDefinitions:
           - AttributeName: file_id#peptide_id#prot_id
             AttributeType: S
@@ -292,6 +292,39 @@ Resources:
                 - dna_id
                 - class
                 - family
+              ProjectionType: INCLUDE
+            ProvisionedThroughput: 
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
+
+  MzidPartsCompleteTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: sls-mzid-parts-complete-${opt:stage}
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: file_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+          - AttributeName: file_id
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        GlobalSecondaryIndexes:
+          - 
+            IndexName: file_id-index
+            KeySchema: 
+              - AttributeName: file_id
+                KeyType: HASH
+            Projection: 
+              NonKeyAttributes:
+                - complete
+                - page
+                - total_pages
               ProjectionType: INCLUDE
             ProvisionedThroughput: 
               ReadCapacityUnits: 1

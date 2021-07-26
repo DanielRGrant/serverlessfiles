@@ -8,4 +8,4 @@ Resources:
         - 
           Endpoint: !GetAtt StartUploadQueryDataStepFunctionLambdaFunction.Arn
           Protocol: lambda
-      TopicName: process-query-data-upload
+      TopicName: process-query-data-upload-${opt:stage}

@@ -190,7 +190,7 @@ Resources:
             !Ref AWS::Region
         -
           Id: "myDDBTableName"
-          StringValue: !ImportValue QueryTableName
+          StringValue: !ImportValue QueryTableName-${opt:stage}
         -
           Id: "myDDBWriteThroughputRatio" 
           StringValue: "0.9"

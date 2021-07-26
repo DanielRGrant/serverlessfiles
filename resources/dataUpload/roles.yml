@@ -40,7 +40,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
-                    - table: !ImportValue QueryTableName
+                    - table: !ImportValue QueryTableName-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:GetObject
@@ -89,14 +89,14 @@ Resources:
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}/index/class-index'
-                    - table: !ImportValue QueryTableName
+                    - table: !ImportValue QueryTableName-${opt:stage}
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
-                    - table: !ImportValue ClassTableName
+                    - table: !ImportValue ClassTable-${opt:stage}
 
   DnaQueryDataToS3Role:
     Type: AWS::IAM::Role
@@ -138,7 +138,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
-                    - table: !ImportValue QueryTableName
+                    - table: !ImportValue QueryTableName-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -188,7 +188,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
-                    - table: !ImportValue QueryTableName
+                    - table: !ImportValue QueryTableName-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -238,7 +238,7 @@ Resources:
                 Resource:
                   - !Sub 
                     - 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${table}'
-                    - table: !ImportValue ProtTableName
+                    - table: !ImportValue ProtTable-${opt:stage}
               - Effect: Allow
                 Action:
                   - s3:GetObject

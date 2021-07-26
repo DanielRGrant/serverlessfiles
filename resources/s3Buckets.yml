@@ -59,4 +59,6 @@ Outputs:
     Value: !GetAtt
       - Website
       - WebsiteURL
-    Description: URL for website hosted on S3
+    Export:
+      Name: WebsiteURL-${opt:stage}
+      Description: URL for website hosted on S3

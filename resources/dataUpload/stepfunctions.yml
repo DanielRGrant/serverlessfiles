@@ -33,4 +33,4 @@ Resources:
         region: !Ref AWS::Region
         accountid: !Ref AWS::AccountId
       RoleArn: !GetAtt StepFuncUploadQueryDataRole.Arn
-      StateMachineName: sls-stepfunc-upload-query-data
+      StateMachineName: sls-stepfunc-upload-query-data-${opt:stage}

@@ -1,10 +1,13 @@
+plugins:
+  - serverless-stack-output
 custom:
   ProteinSequencesParquet: 'all-protein-sequences.parquet'
   DnaSequencesParquet: 'all-dna-sequences.parquet'
-  S3UploadUniprotData: !ImportValue S3UploadUniprotData
+  S3UploadUniprotData: 
+    !ImportValue S3UploadUniprotData-${opt:stage}
   output:
     handler: scripts/output.handler
-    file: .build/upload-data-stack.json
+    file: .build/UploadDataStack.json
 
 service: serverless-retrobase-upload-data
 frameworkVersion: '2'
@@ -20,9 +23,6 @@ provider:
   runtime: python3.8
   lambdaHashingVersion: 20201221
   versionFunctions: false
-
-
-
   stage: ${opt:stage}
   region: us-east-1
 
@@ -36,7 +36,7 @@ functions:
     role: UploadQueryDataRole
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/upload_query_data.py
@@ -48,14 +48,14 @@ functions:
     role: DnaQueryDataToS3Role
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
       QUERY_SEQUENCES:
         !Ref S3QuerySequences
       DNA_SEQUENCES_PARQUET:
         ${self:custom.DnaSequencesParquet}
     layers:
-      - !ImportValue PandasLayerArn
-      - !ImportValue PyarrowLayerArn
+      - !ImportValue PandasLayerArn-${opt:stage}
+      - !ImportValue PyarrowLayerArn-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/dna_query_data_to_s3.py
@@ -67,14 +67,14 @@ functions:
     role: ProteinQueryDataToS3Role
     environment:
       QUERY_DB:
-        'Fn::ImportValue': QueryTableName
+        !ImportValue QueryTableName
       QUERY_SEQUENCES:
         !Ref S3QuerySequences
       PROTEIN_SEQUENCES_PARQUET:
         ${self:custom.ProteinSequencesParquet}
     layers:
-      - !ImportValue PandasLayerArn
-      - !ImportValue PyarrowLayerArn
+      - !ImportValue PandasLayerArn-${opt:stage}
+      - !ImportValue PyarrowLayerArn-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/prot_query_data_to_s3.py
@@ -86,9 +86,9 @@ functions:
     role: ClassDataToClassDbRole
     environment:
       QUERY_DB:
-        !ImportValue QueryTableName
+        !ImportValue QueryTableName-${opt:stage}
       CLASS_DB:
-        !ImportValue ClassTableName
+        !ImportValue ClassTable-${opt:stage}
     package:
       include:
         - lambda_handlers_rest/class_data_to_classdb.py
@@ -105,7 +105,7 @@ functions:
           existing: true
     environment:
       PROT_DB:
-        'Fn::ImportValue': ProtTableName
+        !ImportValue ProtTable-${opt:stage}
       UPLOAD_BUCKET:
         !Ref S3UploadUniprotData
     package:
@@ -141,16 +141,30 @@ resources:
         Value:
           Ref: S3QuerySequences
         Export:
-          Name: S3QuerySequences
+          Name: S3QuerySequences-${opt:stage}
 
       ProteinSequencesParquet:
         Value:
-          Ref: ProteinSequencesParquet
+          ${self:custom.ProteinSequencesParquet}-${opt:stage}
         Export:
-          Name:  ${self:custom.ProteinSequencesParquet}
+          Name: ProteinSequencesParquet-${opt:stage}
 
       DnaSequencesParquet:
         Value:
-          Ref: DnaSequencesParquet
+          ${self:custom.DnaSequencesParquet}-${opt:stage}
         Export:
-          Name: ${self:custom.DnaSequencesParquet}
+          Name: DnaSequencesParquet-${opt:stage}
+
+      S3UploadUniprotData:
+        Value:
+          !Ref S3UploadUniprotData
+        Export:
+          Name: S3UploadUniprotData-${opt:stage}
+
+      S3UploadQueryData:
+        Value:
+          !Ref S3UploadQueryData
+        Export:
+          Name: S3UploadQueryData-${opt:stage}
+
+  

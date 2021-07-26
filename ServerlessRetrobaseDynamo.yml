@@ -21,28 +21,34 @@ resources:
         Value:
           Ref: MzidProgressTable
         Export:
-          Name: MzidProgressTable
+          Name: MzidProgressTable-${opt:stage}
       
       MzidResultsTable:
         Value:
           Ref: MzidResultsTable
         Export:
-          Name: MzidResultsTable
+          Name: MzidResultsTable-${opt:stage}
+
+      MzidPartsCompleteTable:
+        Value:
+          Ref: MzidPartsCompleteTable
+        Export:
+          Name: MzidPartsCompleteTable-${opt:stage}
 
       QueryTable:
         Value:
           Ref: QueryTable
         Export:
-          Name: QueryTableName
+          Name: QueryTableName-${opt:stage}
 
       ProtTable:
         Value:
           Ref: ProtTable
         Export:
-          Name: ProtTableName
+          Name: ProtTable-${opt:stage}
           
       ClassTable:
         Value:
           Ref: ClassTable
         Export:
-          Name: ClassTableName
+          Name: ClassTable-${opt:stage}
